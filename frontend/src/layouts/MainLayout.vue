@@ -7,34 +7,22 @@
         <h2>PuntoMaq</h2>
         <span>RRHH</span>
       </div>
-      <div class="user-role">
-        Rol:
-        {{ authStore.user.role }}
+      <div class="user-info">
+        <strong>
+            {{ authStore.user?.nombre }}
+        </strong>
+
+        <p>
+            {{ authStore.user?.rol }}
+        </p>
     </div>
+
         
       <nav>
 
         <router-link to="/app/dashboard">
           📊 Dashboard
-                <select @change="cambiarRol">
-
-                    <option value="ADMIN">
-                        ADMIN
-                    </option>
-
-                    <option value="RRHH">
-                        RRHH
-                    </option>
-
-                    <option value="JEFE">
-                        JEFE
-                    </option>
-
-                    <option value="EMPLEADO">
-                        EMPLEADO
-                    </option>
-
-                    </select>
+                
         </router-link>
 
         <router-link to="/app/employees">
@@ -44,12 +32,41 @@
         <router-link to="/app/vacations">
           🌴 Vacaciones
         </router-link>
+        <router-link
+        v-if="
+            authStore.user.rol === 'ADMIN' ||
+            authStore.user.rol === 'RRHH' ||
+            authStore.user.rol === 'JEFE'
+        "
+        to="/app/attendances"
+        >
+        🕒 Asistencias
+        </router-link>
+        <router-link
+            v-if="
+                authStore.user.rol === 'ADMIN' ||
+                authStore.user.rol === 'RRHH' ||
+                authStore.user.rol === 'JEFE'
+            "
+            to="/app/permissions"
+            >
+            📋 Permisos
+        </router-link>
+        <router-link
+            v-if="
+                authStore.user.rol === 'ADMIN' ||
+                authStore.user.rol === 'RRHH'
+            "
+            to="/app/payroll"
+            >
+            💰 Planilla
+            </router-link>
 
         <router-link
             v-if="
-                authStore.user.role === 'ADMIN' ||
-                authStore.user.role === 'RRHH' ||
-                authStore.user.role === 'JEFE'
+                authStore.user.rol === 'ADMIN' ||
+                authStore.user.rol === 'RRHH' ||
+                authStore.user.rol === 'JEFE'
             "
             to="/app/reports"
             >
@@ -57,18 +74,19 @@
         </router-link>
 
         <router-link
-            v-if="authStore.user.role === 'ADMIN'"
+            v-if="authStore.user.rol === 'ADMIN'"
             to="/app/users"
             >
             🔐 Usuarios
         </router-link>
+        
 
       </nav>
 
       <div class="logout">
-        <router-link to="/">
-          🚪 Cerrar sesión
-        </router-link>
+        <a @click="cerrarSesion">
+        🚪 Cerrar sesión
+        </a>
       </div>
 
     </aside>
@@ -89,17 +107,18 @@
 </template>
 
 <script setup lang="ts">
-import useAuthStore from '../stores/auth'
+import { useAuthStore } from '../stores/auth'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
-const cambiarRol = (event: Event) => {
+const cerrarSesion = () => {
 
-  const target = event.target as HTMLSelectElement
+  authStore.logout()
 
-  authStore.setRole(
-    target.value
-  )
+  router.push('/')
+
 }
 </script>
 

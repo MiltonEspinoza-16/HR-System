@@ -65,12 +65,29 @@
               <div class="captcha-wrapper p-3 border-round-xl flex flex-column gap-2 mt-2">
                 <label class="text-white-alpha-70 text-center text-xs font-bold uppercase tracking-wider block m-0">Validación de Seguridad</label>
                 
-                <div class="flex align-items-center justify-content-center gap-2">
-                  <div class="captcha-display flex align-items-center justify-content-center bg-white border-round-md shadow-2">
-                    <span class="captcha-text select-none">PM4Q</span>
-                  </div>
-                  <Button type="button" icon="pi pi-refresh" severity="secondary" text rounded class="text-white-alpha-80 hover:bg-white-alpha-10" @click="recargarCaptcha" />
+              <div class="captcha-row">
+
+                <div class="captcha-display bg-white border-round-md shadow-2">
+
+                  <canvas
+                  ref="captchaCanvas"
+                  width="180"
+                  height="55"
+                ></canvas>
+
                 </div>
+
+                <Button
+                  type="button"
+                  icon="pi pi-refresh"
+                  severity="secondary"
+                  text
+                  rounded
+                  class="captcha-btn"
+                  @click="recargarCaptcha"
+                />
+
+              </div>
 
                 <InputText 
                   v-model="loginForm.captcha" 
@@ -101,9 +118,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { useAuthStore } from '../stores/auth'
+const authStore = useAuthStore()
+import axios from 'axios'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
@@ -125,14 +145,155 @@ const errors = reactive({
 })
 
 const loginError = ref('')
+const captchaCode = ref('')
+const captchaCanvas =
+  ref<HTMLCanvasElement | null>(null)
 
-const recargarCaptcha = () => {
-  loginForm.captcha = ''
-  errors.captcha = ''
-  loginError.value = ''
+const generarCaptcha = () => {
+
+  const caracteres =
+    'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'  //para el captcha mejorado
+
+  captchaCode.value = ''
+
+  for (let i = 0; i < 5; i++) {
+
+    captchaCode.value +=
+      caracteres.charAt(
+        Math.floor(
+          Math.random() * caracteres.length
+        )
+      )
+
+  }
+  nextTick(() => {
+
+  dibujarCaptcha()
+
+})
+
 }
 
-const handleLogin = () => {
+
+const dibujarCaptcha = () => {
+
+  if (!captchaCanvas.value) return
+
+  const canvas = captchaCanvas.value
+
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) return
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  )
+
+  ctx.fillStyle = '#fcf6df'
+
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  )
+
+  // Líneas de ruido
+
+  for (let i = 0; i < 5; i++) {
+
+    ctx.beginPath()
+
+    ctx.moveTo(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height
+    )
+
+    ctx.lineTo(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height
+    )
+
+    ctx.strokeStyle = '#999'
+
+    ctx.stroke()
+
+  }
+
+  // Letras
+
+  ctx.font = 'bold 28px Courier New'
+
+  for (
+    let i = 0;
+    i < captchaCode.value.length;
+    i++
+  ) {
+
+    const letra =
+      captchaCode.value.charAt(i)
+    const x =
+      15 + i * 22
+
+    const y =
+      28
+
+    const angulo =
+      (Math.random() - 0.5) * 0.4
+
+    ctx.save()
+
+    ctx.translate(x, y)
+
+    ctx.rotate(angulo)
+
+    ctx.fillStyle =
+      '#1e3a8a'
+
+    ctx.fillText(
+      letra,
+      0,
+      0
+    )
+
+    ctx.restore()
+
+  }
+
+  // Puntos aleatorios
+
+  for (let i = 0; i < 50; i++) {
+
+    ctx.fillStyle =
+      '#555'
+
+    ctx.fillRect(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height,
+      1,
+      1
+    )
+
+  }
+
+}
+
+const recargarCaptcha = () => {
+
+  generarCaptcha()
+
+  loginForm.captcha = ''
+
+  errors.captcha = ''
+
+  loginError.value = ''
+
+}
+
+const handleLogin = async () => {
   errors.username = ''
   errors.password = ''
   errors.captcha = ''
@@ -144,13 +305,60 @@ const handleLogin = () => {
 
   if (errors.username || errors.password || errors.captcha) return
 
-  // Simulación temporal de acceso directo
-  if (loginForm.username === 'admin' && loginForm.password === '123456' && loginForm.captcha.toUpperCase() === 'PM4Q') {
-    router.push('/app/dashboard')
-  } else {
-    loginError.value = 'Credenciales o CAPTCHA inválidos. (Pruebe con admin / 123456 / PM4Q)'
+  // Simulación temporal de acceso directo ya remplazado
+  try {
+
+ if (
+      loginForm.captcha.toUpperCase() !==
+      captchaCode.value
+    ) {
+
+      loginError.value =
+        'CAPTCHA incorrecto'
+
+      generarCaptcha()
+
+      loginForm.captcha = ''
+
+      return
+
   }
+
+  const response = await axios.post(
+    'http://localhost:3000/auth/login',
+    {
+      username: loginForm.username,
+      password: loginForm.password
+    }
+  )
+
+  if (response.data.success) {
+
+        authStore.setUser(
+        response.data.user
+        )
+
+    router.push('/app/dashboard')
+
+  } else {
+
+    loginError.value =
+      response.data.message
+
+  }
+
+} catch (error) {
+
+  loginError.value =
+    'Error al conectar con el servidor'
+
 }
+}
+onMounted(() => {
+
+  generarCaptcha()
+
+})
 </script>
 
 <style scoped>
@@ -229,10 +437,19 @@ const handleLogin = () => {
 }
 
 .captcha-display {
-  width: 140px;
-  height: 42px;
-  overflow: hidden;
-  background-color: #fcf6df !important; /* Tono crema clásico de seguridad */
+  width: 180px;
+  height: 60px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background-color: #fcf6df;
+
+  margin: 0; /* quitar auto */
+}
+.captcha-wrapper canvas {
+  display: block;
 }
 
 .captcha-text {
@@ -254,7 +471,24 @@ const handleLogin = () => {
   letter-spacing: 1px;
   transition: background-color 0.2s ease;
 }
+.captcha-refresh {
+  display: flex;
+  justify-content: center;
+}
+.captcha-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
 
+.captcha-btn {
+  color: white !important;
+}
+
+.captcha-btn:hover {
+  background: rgba(255,255,255,0.12) !important;
+}
 .custom-btn:hover {
   background-color: rgba(255, 255, 255, 0.9) !important;
 }

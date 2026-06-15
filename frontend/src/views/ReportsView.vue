@@ -24,9 +24,9 @@
           Próximamente
         </p>
 
-        <button disabled>
-          Generar PDF
-        </button>
+      <button @click="generarReporteVacaciones">
+        Generar PDF
+    </button>
       </div>
 
       <div class="report-card">
@@ -36,8 +36,8 @@
           Próximamente
         </p>
 
-        <button disabled>
-          Generar PDF
+       <button @click="generarReportePlanillas">
+        Generar PDF
         </button>
       </div>
 
@@ -49,48 +49,205 @@
 <script setup lang="ts">
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import axios from 'axios'
 
-const generarReporteEmpleados = () => {
+const generarReporteEmpleados = async () => {
 
-  const doc = new jsPDF()
+  try {
 
-  doc.setFontSize(18)
-  doc.text(
-    'REPORTE DE EMPLEADOS - PUNTOMAQ',
-    14,
-    20
-  )
+    const response =
+      await axios.get(
+        'http://localhost:3000/employees'
+      )
 
-  autoTable(doc, {
-    startY: 30,
+    const empleados =
+      response.data
 
-    head: [[
-      'CI',
-      'Nombre',
-      'Cargo',
-      'Departamento',
-      'Salario'
-    ]],
+    const doc = new jsPDF()
 
-    body: [
-      [
-        '1234567 LP',
-        'Juan Pérez',
-        'Analista',
-        'RRHH',
-        '5000'
-      ],
-      [
-        '9876543 CB',
-        'María López',
-        'Contadora',
-        'Finanzas',
-        '6500'
-      ]
-    ]
-  })
+    doc.setFontSize(18)
 
-  doc.save('reporte-empleados.pdf')
+    doc.text(
+      'REPORTE DE EMPLEADOS - PUNTOMAQ',
+      14,
+      20
+    )
+
+    autoTable(doc, {
+
+      startY: 30,
+
+      head: [[
+        'CI',
+        'Nombre',
+        'Cargo',
+        'Departamento',
+        'Salario'
+      ]],
+
+      body: empleados.map(
+        (emp: any) => [
+
+          emp.ci,
+
+          emp.nombre,
+
+          emp.cargo,
+
+          emp.departamento,
+
+          emp.salario
+
+        ]
+      )
+
+    })
+
+    doc.save(
+      'reporte-empleados.pdf'
+    )
+
+  } catch (error) {
+
+    console.error(
+      'Error generando reporte',
+      error
+    )
+
+  }
+
+}
+const generarReporteVacaciones = async () => {
+
+  try {
+
+    const response =
+      await axios.get(
+        'http://localhost:3000/vacations'
+      )
+
+    const vacaciones =
+      response.data
+
+    const doc = new jsPDF()
+
+    doc.setFontSize(18)
+
+    doc.text(
+      'REPORTE DE VACACIONES - PUNTOMAQ',
+      14,
+      20
+    )
+
+    autoTable(doc, {
+
+      startY: 30,
+
+      head: [[
+        'Empleado',
+        'Fecha Inicio',
+        'Fecha Fin',
+        'Estado'
+      ]],
+
+      body: vacaciones.map(
+        (vac: any) => [
+
+          vac.employee?.nombre,
+
+          vac.fecha_inicio,
+
+          vac.fecha_fin,
+
+          vac.estado
+
+        ]
+      )
+
+    })
+
+    doc.save(
+      'reporte-vacaciones.pdf'
+    )
+
+  } catch (error) {
+
+    console.error(
+      'Error generando reporte',
+      error
+    )
+
+  }
+
+}
+const generarReportePlanillas = async () => {
+
+  try {
+
+    const response =
+      await axios.get(
+        'http://localhost:3000/payroll'
+      )
+
+    const planillas =
+      response.data
+
+    const doc = new jsPDF()
+
+    doc.setFontSize(18)
+
+    doc.text(
+      'REPORTE DE PLANILLAS - PUNTOMAQ',
+      14,
+      20
+    )
+
+    autoTable(doc, {
+
+      startY: 30,
+
+      head: [[
+        'Empleado',
+        'Salario Base',
+        'Bono',
+        'Descuento',
+        'Total',
+        'Fecha Pago'
+      ]],
+
+      body: planillas.map(
+        (p: any) => [
+
+          p.employee?.nombre,
+
+          p.salario_base,
+
+          p.bono,
+
+          p.descuento,
+
+          p.total,
+
+          p.fecha_pago
+
+        ]
+      )
+
+    })
+
+    doc.save(
+      'reporte-planillas.pdf'
+    )
+
+  } catch (error) {
+
+    console.error(
+      'Error generando reporte',
+      error
+    )
+
+  }
+
 }
 </script>
 

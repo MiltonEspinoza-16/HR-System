@@ -103,28 +103,34 @@
 
 <script setup lang="ts">
 
-import { ref, computed } from 'vue'
-
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 const showForm = ref(false)
 const editando = ref(false)
 const usuarioEditandoId = ref<number | null>(null)
 
-const users = ref([
-  {
-    id: 1,
-    username: 'admin',
-    nombre: 'Administrador',
-    rol: 'ADMIN',
-    estado: 'Activo'
-  },
-  {
-    id: 2,
-    username: 'rrhh',
-    nombre: 'Recursos Humanos',
-    rol: 'RRHH',
-    estado: 'Activo'
+const users = ref<any[]>([])
+const cargarUsuarios = async () => {
+
+  try {
+
+    const response =
+      await axios.get(
+        'http://localhost:3000/users'
+      )
+
+    users.value = response.data
+
+  } catch (error) {
+
+    console.error(
+      'Error cargando usuarios',
+      error
+    )
+
   }
-])
+
+}
 
 const nuevoUsuario = ref({
   username: '',
@@ -174,45 +180,64 @@ const abrirNuevoUsuario = () => {
   showForm.value = true
 }
 
-const guardarUsuario = () => {
+const guardarUsuario = async () => {
 
-  if (
-    !nuevoUsuario.value.username ||
-    !nuevoUsuario.value.nombre
-  ) {
-    alert('Complete los campos')
-    return
-  }
+  try {
 
-  if (editando.value) {
+    if (
+      !nuevoUsuario.value.username ||
+      !nuevoUsuario.value.nombre
+    ) {
+      alert('Complete los campos')
+      return
+    }
 
-    users.value = users.value.map(user => {
+    if (editando.value) {
 
-      if (user.id === usuarioEditandoId.value) {
-        return {
-          ...user,
+      await axios.patch(
+        `http://localhost:3000/users/${usuarioEditandoId.value}`,
+        {
           username: nuevoUsuario.value.username,
           nombre: nuevoUsuario.value.nombre,
           rol: nuevoUsuario.value.rol
         }
-      }
+      )
 
-      return user
-    })
+    } else {
 
-  } else {
+      await axios.post(
+        'http://localhost:3000/users',
+        {
+          username: nuevoUsuario.value.username,
+          nombre: nuevoUsuario.value.nombre,
+          password: nuevoUsuario.value.password,
+          rol: nuevoUsuario.value.rol
+        }
+      )
 
-    users.value.push({
-      id: Date.now(),
-      username: nuevoUsuario.value.username,
-      nombre: nuevoUsuario.value.nombre,
-      rol: nuevoUsuario.value.rol,
-      estado: 'Activo'
-    })
+    }
+
+    await cargarUsuarios()
+
+    showForm.value = false
+
+  } catch (error: any) {
+
+    console.log(
+      'ERROR BACKEND:',
+      error.response?.data
+    )
+
+    alert(
+      JSON.stringify(
+        error.response?.data,
+        null,
+        2
+      )
+    )
 
   }
 
-  showForm.value = false
 }
 
 const editarUsuario = (user: any) => {
@@ -230,12 +255,23 @@ const editarUsuario = (user: any) => {
   showForm.value = true
 }
 
-const eliminarUsuario = (id: number) => {
+const eliminarUsuario = async (id: number) => {
 
-  users.value = users.value.filter(
-    user => user.id !== id
+  const confirmar =
+    confirm('¿Desea eliminar este usuario?')
+
+  if (!confirmar) return
+
+  await axios.delete(
+    `http://localhost:3000/users/${id}`
   )
+
+  await cargarUsuarios()
+
 }
+onMounted(() => {
+  cargarUsuarios()
+})
 </script>
 
 <style scoped>

@@ -1,16 +1,85 @@
 <template>
-  <div>
 
-    <div class="header">
+<div class="vacaciones-container">
+
+  <div class="header">
+
+    <div>
       <h1>Gestión de Vacaciones</h1>
-
-      <button @click="abrirNuevaVacacion">
-        Nueva Solicitud
-      </button>
+      <p class="subtitle">
+        Administración y control de solicitudes vacacionales
+      </p>
     </div>
 
+    <button
+      class="btn-primary"
+      @click="abrirNuevaVacacion"
+    >
+      + Nueva Solicitud
+    </button>
+
+  </div>
+
+  <!-- TARJETAS -->
+
+  <div class="cards">
+
+    <div class="card">
+      <h3>Total Solicitudes</h3>
+      <span>{{ vacations.length }}</span>
+    </div>
+
+    <div class="card">
+      <h3>Pendientes</h3>
+      <span>{{ pendientes }}</span>
+    </div>
+
+    <div class="card">
+      <h3>Aprobadas</h3>
+      <span>{{ aprobadas }}</span>
+    </div>
+
+    <div class="card">
+      <h3>Rechazadas</h3>
+      <span>{{ rechazadas }}</span>
+    </div>
+
+  </div>
+
+  <!-- FILTRO -->
+
+  <div class="filters">
+
+    <select v-model="estadoFiltro">
+
+      <option value="">
+        Todos los estados
+      </option>
+
+      <option value="PENDIENTE">
+        Pendientes
+      </option>
+
+      <option value="APROBADA">
+        Aprobadas
+      </option>
+
+      <option value="RECHAZADA">
+        Rechazadas
+      </option>
+
+    </select>
+
+  </div>
+
+  <!-- TABLA -->
+
+  <div class="table-container">
+
     <table>
+
       <thead>
+
         <tr>
           <th>Empleado</th>
           <th>Antigüedad</th>
@@ -20,212 +89,534 @@
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
+
       </thead>
 
       <tbody>
 
-        <tr v-for="vac in vacations" :key="vac.id">
-          <td>{{ vac.empleado }}</td>
-          <td>{{ vac.antiguedad }} años</td>
-          <td>{{ vac.diasDisponibles }}</td>
-          <td>{{ vac.fechaInicio }}</td>
-          <td>{{ vac.fechaFin }}</td>
-          <td>{{ vac.estado }}</td>
+        <tr
+          v-for="vac in vacacionesFiltradas"
+          :key="vac.id"
+        >
 
           <td>
-            <button @click="editarVacacion(vac)">
+            {{ vac.employee?.nombre }}
+          </td>
+
+          <td>
+            {{ nuevaVacacion.antiguedad }} años
+          </td>
+
+          <td>
+            {{ calcularDias(nuevaVacacion.antiguedad) }}
+          </td>
+
+          <td>
+            {{ vac.fecha_inicio }}
+          </td>
+
+          <td>
+            {{ vac.fecha_fin }}
+          </td>
+
+          <td>
+
+            <span
+              :class="[
+                'badge',
+                vac.estado.toLowerCase()
+              ]"
+            >
+              {{ vac.estado }}
+            </span>
+
+          </td>
+
+          <td>
+
+            <button
+              class="btn-edit"
+              @click="editarVacacion(vac)"
+            >
               Editar
             </button>
 
-            <button @click="eliminarVacacion(vac.id)">
+            <button
+              class="btn-delete"
+              @click="eliminarVacacion(vac.id)"
+            >
               Eliminar
             </button>
+
           </td>
+
         </tr>
 
       </tbody>
+
     </table>
 
-    <!-- Modal -->
+  </div>
 
-    <div v-if="showForm" class="modal">
+  <!-- MODAL -->
 
-      <div class="modal-content">
+  <div
+    v-if="showForm"
+    class="modal"
+  >
 
-        <h2>
-          {{ editando ? 'Editar Vacación' : 'Nueva Vacación' }}
-        </h2>
+    <div class="modal-content">
 
-        <input
-          v-model="nuevaVacacion.empleado"
-          placeholder="Nombre del empleado"
-        />
+      <h2>
 
-        <input
-          type="number"
-          v-model="nuevaVacacion.antiguedad"
-          placeholder="Antigüedad en años"
-        />
+        {{
+          editando
+            ? 'Editar Vacación'
+            : 'Nueva Solicitud'
+        }}
 
-        <input
-          type="date"
-          v-model="nuevaVacacion.fechaInicio"
-        />
+      </h2>
 
-        <input
-          type="date"
-          v-model="nuevaVacacion.fechaFin"
-        />
+      <select
+        v-model="nuevaVacacion.employee_id"
+      >
 
-        <div class="info">
-          Días disponibles:
-          <strong>{{ calcularDias(nuevaVacacion.antiguedad) }}</strong>
-        </div>
+        <option value="">
+          Seleccione empleado
+        </option>
 
-        <div class="buttons">
+        <option
+          v-for="emp in employees"
+          :key="emp.id"
+          :value="emp.id"
+        >
+          {{ emp.nombre }}
+        </option>
 
-          <button @click="guardarVacacion">
-            Guardar
-          </button>
+      </select>
 
-          <button @click="showForm = false">
-            Cancelar
-          </button>
+      <input
+        type="number"
+        v-model="nuevaVacacion.antiguedad"
+        placeholder="Antigüedad"
+      />
 
-        </div>
+      <input
+        type="date"
+        v-model="nuevaVacacion.fechaInicio"
+      />
+
+      <input
+        type="date"
+        v-model="nuevaVacacion.fechaFin"
+      />
+
+      <div class="info">
+
+        Días disponibles:
+
+        <strong>
+          {{ calcularDias(nuevaVacacion.antiguedad) }}
+        </strong>
+
+      </div>
+
+      <div class="buttons">
+
+        <button
+          class="btn-primary"
+          @click="guardarVacacion"
+        >
+          Guardar
+        </button>
+
+        <button
+          class="btn-secondary"
+          @click="showForm = false"
+        >
+          Cancelar
+        </button>
 
       </div>
 
     </div>
 
   </div>
-</template>
 
+</div>
+
+</template>
 <script setup lang="ts">
-import { ref } from 'vue'
+
+import {
+  ref,
+  computed,
+  onMounted
+} from 'vue'
+
+import axios from 'axios'
 
 const showForm = ref(false)
-const editando = ref(false)
-const vacacionEditandoId = ref<number | null>(null)
 
-const vacations = ref([
-  {
-    id: 1,
-    empleado: 'Juan Pérez',
-    antiguedad: 3,
-    diasDisponibles: 15,
-    fechaInicio: '2026-06-10',
-    fechaFin: '2026-06-25',
-    estado: 'Aprobado'
-  }
-])
+const editando = ref(false)
+
+const vacacionEditandoId =
+  ref<number | null>(null)
+
+const vacations = ref<any[]>([])
+
+const employees = ref<any[]>([])
+
+const estadoFiltro = ref('')
 
 const nuevaVacacion = ref({
-  empleado: '',
+
+  employee_id: '',
+
   antiguedad: 1,
+
   fechaInicio: '',
+
   fechaFin: ''
+
 })
 
-const calcularDias = (antiguedad: number) => {
+/* ==========================
+   ESTADÍSTICAS DASHBOARD
+========================== */
+
+const pendientes = computed(() =>
+
+  vacations.value.filter(
+
+    v =>
+      v.estado === 'PENDIENTE'
+
+  ).length
+
+)
+
+const aprobadas = computed(() =>
+
+  vacations.value.filter(
+
+    v =>
+      v.estado === 'APROBADA'
+
+  ).length
+
+)
+
+const rechazadas = computed(() =>
+
+  vacations.value.filter(
+
+    v =>
+      v.estado === 'RECHAZADA'
+
+  ).length
+
+)
+
+/* ==========================
+   FILTRO
+========================== */
+
+const vacacionesFiltradas =
+computed(() => {
+
+  if (!estadoFiltro.value) {
+
+    return vacations.value
+
+  }
+
+  return vacations.value.filter(
+
+    v =>
+      v.estado ===
+      estadoFiltro.value
+
+  )
+
+})
+
+/* ==========================
+   CARGAR VACACIONES
+========================== */
+
+const cargarVacaciones =
+async () => {
+
+  try {
+
+    const response =
+      await axios.get(
+        'http://localhost:3000/vacations'
+      )
+
+    vacations.value =
+      response.data
+
+  } catch (error) {
+
+    console.error(
+      'Error cargando vacaciones',
+      error
+    )
+
+  }
+
+}
+
+/* ==========================
+   CARGAR EMPLEADOS
+========================== */
+
+const cargarEmpleados =
+async () => {
+
+  try {
+
+    const response =
+      await axios.get(
+        'http://localhost:3000/employees'
+      )
+
+    employees.value =
+      response.data
+
+  } catch (error) {
+
+    console.error(
+      'Error cargando empleados',
+      error
+    )
+
+  }
+
+}
+
+/* ==========================
+   CÁLCULO DE DÍAS
+========================== */
+
+const calcularDias =
+(
+  antiguedad: number
+) => {
 
   if (antiguedad < 5) {
+
     return 15
+
   }
 
   if (antiguedad < 10) {
+
     return 20
+
   }
 
   return 30
+
 }
 
-const abrirNuevaVacacion = () => {
+/* ==========================
+   NUEVA VACACIÓN
+========================== */
+
+const abrirNuevaVacacion =
+() => {
 
   editando.value = false
 
   nuevaVacacion.value = {
-    empleado: '',
+
+    employee_id: '',
+
     antiguedad: 1,
+
     fechaInicio: '',
+
     fechaFin: ''
+
   }
 
   showForm.value = true
+
 }
 
-const guardarVacacion = () => {
+/* ==========================
+   GUARDAR VACACIÓN
+========================== */
+
+const guardarVacacion =
+async () => {
 
   if (
-    !nuevaVacacion.value.empleado ||
+
+    !nuevaVacacion.value.employee_id ||
+
     !nuevaVacacion.value.fechaInicio ||
+
     !nuevaVacacion.value.fechaFin
+
   ) {
-    alert('Complete todos los campos')
+
+    alert(
+      'Complete todos los campos'
+    )
+
     return
+
   }
 
-  if (editando.value) {
+  try {
 
-    vacations.value = vacations.value.map(v => {
+    if (editando.value) {
 
-      if (v.id === vacacionEditandoId.value) {
+      await axios.patch(
 
-        return {
-          ...v,
-          empleado: nuevaVacacion.value.empleado,
-          antiguedad: Number(nuevaVacacion.value.antiguedad),
-          diasDisponibles: calcularDias(
-            Number(nuevaVacacion.value.antiguedad)
+        `http://localhost:3000/vacations/${vacacionEditandoId.value}`,
+
+        {
+
+          employee_id: Number(
+            nuevaVacacion.value.employee_id
           ),
-          fechaInicio: nuevaVacacion.value.fechaInicio,
-          fechaFin: nuevaVacacion.value.fechaFin
+
+          fecha_inicio:
+            nuevaVacacion.value.fechaInicio,
+
+          fecha_fin:
+            nuevaVacacion.value.fechaFin
+
         }
-      }
 
-      return v
-    })
+      )
 
-  } else {
+    } else {
 
-    vacations.value.push({
-      id: Date.now(),
-      empleado: nuevaVacacion.value.empleado,
-      antiguedad: Number(nuevaVacacion.value.antiguedad),
-      diasDisponibles: calcularDias(
-        Number(nuevaVacacion.value.antiguedad)
-      ),
-      fechaInicio: nuevaVacacion.value.fechaInicio,
-      fechaFin: nuevaVacacion.value.fechaFin,
-      estado: 'Pendiente'
-    })
+      await axios.post(
+
+        'http://localhost:3000/vacations',
+
+        {
+
+          employee_id: Number(
+            nuevaVacacion.value.employee_id
+          ),
+
+          fecha_inicio:
+            nuevaVacacion.value.fechaInicio,
+
+          fecha_fin:
+            nuevaVacacion.value.fechaFin,
+
+          estado: 'PENDIENTE'
+
+        }
+
+      )
+
+    }
+
+    await cargarVacaciones()
+
+    showForm.value = false
+
+  } catch (error) {
+
+    console.error(
+      'Error guardando vacación',
+      error
+    )
 
   }
 
-  showForm.value = false
 }
 
-const editarVacacion = (vac: any) => {
+/* ==========================
+   EDITAR
+========================== */
+
+const editarVacacion =
+(vac: any) => {
 
   editando.value = true
-  vacacionEditandoId.value = vac.id
+
+  vacacionEditandoId.value =
+    vac.id
 
   nuevaVacacion.value = {
-    empleado: vac.empleado,
-    antiguedad: vac.antiguedad,
-    fechaInicio: vac.fechaInicio,
-    fechaFin: vac.fechaFin
+
+    employee_id:
+      vac.employee_id,
+
+    antiguedad: 1,
+
+    fechaInicio:
+      vac.fecha_inicio,
+
+    fechaFin:
+      vac.fecha_fin
+
   }
 
   showForm.value = true
+
 }
 
-const eliminarVacacion = (id: number) => {
+/* ==========================
+   ELIMINAR
+========================== */
 
-  vacations.value = vacations.value.filter(
-    vac => vac.id !== id
-  )
+const eliminarVacacion =
+async (
+  id: number
+) => {
+
+  const confirmar =
+    confirm(
+      '¿Desea eliminar esta solicitud?'
+    )
+
+  if (!confirmar) return
+
+  try {
+
+    await axios.delete(
+
+      `http://localhost:3000/vacations/${id}`
+
+    )
+
+    await cargarVacaciones()
+
+  } catch (error) {
+
+    console.error(
+      'Error eliminando vacación',
+      error
+    )
+
+  }
+
 }
+
+/* ==========================
+   MOUNT
+========================== */
+
+onMounted(() => {
+
+  cargarVacaciones()
+
+  cargarEmpleados()
+
+})
+
 </script>
 
 <style scoped>
@@ -292,5 +683,56 @@ button{
   padding:10px;
   background:#eff6ff;
   border-radius:8px;
+}
+.cards{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+  margin-bottom:20px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+.card h3{
+  margin:0;
+  font-size:14px;
+  color:#6b7280;
+}
+
+.card span{
+  font-size:30px;
+  font-weight:bold;
+  color:#111827;
+}
+
+.filters{
+  margin-bottom:15px;
+}
+
+.badge{
+  padding:6px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+}
+
+.pendiente{
+  background:#fef3c7;
+  color:#92400e;
+}
+
+.aprobada{
+  background:#dcfce7;
+  color:#166534;
+}
+
+.rechazada{
+  background:#fee2e2;
+  color:#991b1b;
 }
 </style>

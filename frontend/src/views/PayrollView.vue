@@ -24,10 +24,22 @@
 
         <tr v-for="planilla in payrolls" :key="planilla.id">
 
-          <td>{{ planilla.empleado }}</td>
-          <td>Bs. {{ planilla.totalGanado.toFixed(2) }}</td>
-          <td>Bs. {{ planilla.afp.toFixed(2) }}</td>
-          <td>Bs. {{ planilla.liquido.toFixed(2) }}</td>
+            <td> {{ planilla.employee?.nombre }}</td>
+            <td>
+            Bs. {{ planilla.total }}
+            </td>
+
+            <td>
+            Bs. {{ planilla.descuento }}
+            </td>
+
+            <td>
+            Bs.
+            {{
+                Number(planilla.total) -
+                Number(planilla.descuento)
+            }}
+            </td>
 
           <td>
             <button @click="editarPlanilla(planilla)">
@@ -54,51 +66,58 @@
           {{ editando ? 'Editar Planilla' : 'Nueva Planilla' }}
         </h2>
 
+        <select
+  v-model="nuevaPlanilla.employee_id"
+>
+  <option value="">
+    Seleccione empleado
+  </option>
+
+  <option
+    v-for="emp in employees"
+    :key="emp.id"
+    :value="emp.id"
+  >
+    {{ emp.nombre }}
+  </option>
+</select>
+
         <input
-          v-model="nuevaPlanilla.empleado"
-          placeholder="Empleado"
+        type="number"
+        v-model="nuevaPlanilla.salario_base"
+        placeholder="Salario Base"
         />
 
         <input
-          type="number"
-          v-model="nuevaPlanilla.haberBasico"
-          placeholder="Haber Básico"
+        type="number"
+        v-model="nuevaPlanilla.bono"
+        placeholder="Bono"
         />
 
         <input
-          type="number"
-          v-model="nuevaPlanilla.bonoAntiguedad"
-          placeholder="Bono Antigüedad"
+        type="number"
+        v-model="nuevaPlanilla.descuento"
+        placeholder="Descuento"
         />
 
         <input
-          type="number"
-          v-model="nuevaPlanilla.otrosBonos"
-          placeholder="Otros Bonos"
+        type="date"
+        v-model="nuevaPlanilla.fecha_pago"
         />
 
         <div class="resumen">
 
-          <p>
-            Total Ganado:
+        <p>
+            Total:
             <strong>
-              Bs. {{ calcularTotal().toFixed(2) }}
+            Bs.
+            {{
+                Number(nuevaPlanilla.salario_base) +
+                Number(nuevaPlanilla.bono) -
+                Number(nuevaPlanilla.descuento)
+            }}
             </strong>
-          </p>
-
-          <p>
-            AFP (12.71%):
-            <strong>
-              Bs. {{ calcularAFP().toFixed(2) }}
-            </strong>
-          </p>
-
-          <p>
-            Líquido:
-            <strong>
-              Bs. {{ calcularLiquido().toFixed(2) }}
-            </strong>
-          </p>
+        </p>
 
         </div>
 
@@ -122,34 +141,74 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+
+
 
 const showForm = ref(false)
 const editando = ref(false)
 const planillaEditandoId = ref<number | null>(null)
+const cargarPlanillas = async () => {
 
-const payrolls = ref([
-  {
-    id: 1,
-    empleado: 'Juan Pérez',
-    totalGanado: 5500,
-    afp: 699.05,
-    liquido: 4800.95
+  try {
+
+    const response =
+      await axios.get(
+        'http://localhost:3000/payroll'
+      )
+
+    payrolls.value =
+      response.data
+
+  } catch (error) {
+
+    console.error(
+      'Error cargando planillas',
+      error
+    )
+
   }
-])
 
+}
+
+const payrolls = ref<any[]>([])
+const employees = ref<any[]>([])
+const cargarEmpleados = async () => {
+
+  try {
+
+    const response =
+      await axios.get(
+        'http://localhost:3000/employees'
+      )
+
+    employees.value =
+      response.data
+
+  } catch (error) {
+
+    console.error(
+      'Error cargando empleados',
+      error
+    )
+
+  }
+
+}
 const nuevaPlanilla = ref({
-  empleado: '',
-  haberBasico: 0,
-  bonoAntiguedad: 0,
-  otrosBonos: 0
+  employee_id: '',
+  salario_base: 0,
+  bono: 0,
+  descuento: 0,
+  fecha_pago: ''
 })
 
 const calcularTotal = () => {
   return (
-    Number(nuevaPlanilla.value.haberBasico) +
-    Number(nuevaPlanilla.value.bonoAntiguedad) +
-    Number(nuevaPlanilla.value.otrosBonos)
+    Number(nuevaPlanilla.value.salario_base) +
+    Number(nuevaPlanilla.value.bono) -
+    Number(nuevaPlanilla.value.descuento)
   )
 }
 
@@ -164,62 +223,177 @@ const calcularLiquido = () => {
 const abrirNuevaPlanilla = () => {
 
   editando.value = false
+const abrirNuevaPlanilla = () => {
+
+  editando.value = false
 
   nuevaPlanilla.value = {
-    empleado: '',
-    haberBasico: 0,
-    bonoAntiguedad: 0,
-    otrosBonos: 0
+    employee_id: '',
+    salario_base: 0,
+    bono: 0,
+    descuento: 0,
+    fecha_pago: ''
   }
 
   showForm.value = true
 }
 
-const guardarPlanilla = () => {
+  showForm.value = true
+}
 
-  if (!nuevaPlanilla.value.empleado) {
-    alert('Ingrese empleado')
+const guardarPlanilla = async () => {
+
+  if (!nuevaPlanilla.value.employee_id) {
+
+    alert('Seleccione un empleado')
+
     return
   }
 
-  const registro = {
-    id: Date.now(),
-    empleado: nuevaPlanilla.value.empleado,
-    totalGanado: calcularTotal(),
-    afp: calcularAFP(),
-    liquido: calcularLiquido()
+  try {
+
+    if (editando.value) {
+
+      await axios.patch(
+
+        `http://localhost:3000/payroll/${planillaEditandoId.value}`,
+
+        {
+          employee_id: Number(
+            nuevaPlanilla.value.employee_id
+          ),
+
+          salario_base: Number(
+            nuevaPlanilla.value.salario_base
+          ),
+
+          bono: Number(
+            nuevaPlanilla.value.bono
+          ),
+
+          descuento: Number(
+            nuevaPlanilla.value.descuento
+          ),
+
+          fecha_pago:
+            nuevaPlanilla.value.fecha_pago
+        }
+
+      )
+
+    } else {
+
+      await axios.post(
+
+        'http://localhost:3000/payroll',
+
+        {
+          employee_id: Number(
+            nuevaPlanilla.value.employee_id
+          ),
+
+          salario_base: Number(
+            nuevaPlanilla.value.salario_base
+          ),
+
+          bono: Number(
+            nuevaPlanilla.value.bono
+          ),
+
+          descuento: Number(
+            nuevaPlanilla.value.descuento
+          ),
+
+          fecha_pago:
+            nuevaPlanilla.value.fecha_pago
+        }
+
+      )
+
+    }
+
+    await cargarPlanillas()
+
+    nuevaPlanilla.value = {
+      employee_id: '',
+      salario_base: 0,
+      bono: 0,
+      descuento: 0,
+      fecha_pago: ''
+    }
+
+    showForm.value = false
+
+    editando.value = false
+
+  } catch (error) {
+
+    console.error(
+      'Error guardando planilla',
+      error
+    )
+
   }
 
-  if (editando.value) {
-
-    payrolls.value = payrolls.value.map(p => {
-
-      if (p.id === planillaEditandoId.value) {
-        return registro
-      }
-
-      return p
-    })
-
-  } else {
-
-    payrolls.value.push(registro)
-
-  }
-
-  showForm.value = false
 }
 
 const editarPlanilla = (planilla: any) => {
-  alert('La edición avanzada la haremos después')
+
+  editando.value = true
+
+  planillaEditandoId.value =
+    planilla.id
+
+  nuevaPlanilla.value = {
+
+    employee_id:
+      planilla.employee?.id || '',
+
+    salario_base:
+      Number(planilla.salario_base),
+
+    bono:
+      Number(planilla.bono),
+
+    descuento:
+      Number(planilla.descuento),
+
+    fecha_pago:
+      planilla.fecha_pago
+
+  }
+
+  showForm.value = true
+
 }
 
-const eliminarPlanilla = (id: number) => {
+const eliminarPlanilla = async (id: number) => {
 
-  payrolls.value = payrolls.value.filter(
-    p => p.id !== id
-  )
+  try {
+
+    await axios.delete(
+      `http://localhost:3000/payroll/${id}`
+    )
+
+    await cargarPlanillas()
+
+  } catch (error) {
+
+    console.error(
+      'Error eliminando planilla',
+      error
+    )
+
+  }
+
 }
+onMounted(() => {
+
+  cargarPlanillas()
+
+  cargarEmpleados()
+
+})
 </script>
 
 <style scoped>
