@@ -43,14 +43,15 @@ export class AuthService {
       };
     }
 
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        nombre: user.nombre,
-        rol: user.rol,
-      },
-    };
+   return {
+    success: true,
+    user: {
+      id: user.id,
+      username: user.username,
+      nombre: user.nombre,
+      rol: user.rol,
+      employee_id: user.employee_id,
+    },
+  };
   }
 }

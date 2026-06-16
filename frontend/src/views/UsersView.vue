@@ -63,6 +63,21 @@
           v-model="nuevoUsuario.nombre"
           placeholder="Nombre Completo"
         />
+        <select v-model="nuevoUsuario.employee_id">
+
+          <option value="">
+            Seleccione empleado
+          </option>
+
+          <option
+            v-for="emp in employees"
+            :key="emp.id"
+            :value="emp.id"
+          >
+            {{ emp.codigo }} - {{ emp.nombre }}
+          </option>
+
+        </select>
 
         <input
           type="password"
@@ -109,7 +124,53 @@ const showForm = ref(false)
 const editando = ref(false)
 const usuarioEditandoId = ref<number | null>(null)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const cargarEmpleados = async () => {
+
+  try {
+
+    const response =
+      await axios.get(
+        'http://localhost:3000/employees'
+      )
+
+    employees.value =
+      response.data
+
+  } catch (error) {
+
+    console.error(
+      'Error cargando empleados',
+      error
+    )
+
+  }
+
+}
+
+const employees = ref<any[]>([])
+
+
+
+
+
+
+
 const users = ref<any[]>([])
+
 const cargarUsuarios = async () => {
 
   try {
@@ -136,7 +197,8 @@ const nuevoUsuario = ref({
   username: '',
   nombre: '',
   password: '',
-  rol: 'EMPLEADO'
+  rol: 'EMPLEADO',
+  employee_id: ''
 })
 
 const passwordStrength = computed(() => {
@@ -174,7 +236,8 @@ const abrirNuevoUsuario = () => {
     username: '',
     nombre: '',
     password: '',
-    rol: 'EMPLEADO'
+    rol: 'EMPLEADO',
+    employee_id: ''
   }
 
   showForm.value = true
@@ -199,7 +262,10 @@ const guardarUsuario = async () => {
         {
           username: nuevoUsuario.value.username,
           nombre: nuevoUsuario.value.nombre,
-          rol: nuevoUsuario.value.rol
+          rol: nuevoUsuario.value.rol,
+          employee_id: Number(
+            nuevoUsuario.value.employee_id
+          )
         }
       )
 
@@ -211,7 +277,10 @@ const guardarUsuario = async () => {
           username: nuevoUsuario.value.username,
           nombre: nuevoUsuario.value.nombre,
           password: nuevoUsuario.value.password,
-          rol: nuevoUsuario.value.rol
+          rol: nuevoUsuario.value.rol,
+          employee_id: Number(
+            nuevoUsuario.value.employee_id
+          )
         }
       )
 
@@ -249,7 +318,8 @@ const editarUsuario = (user: any) => {
     username: user.username,
     nombre: user.nombre,
     password: '',
-    rol: user.rol
+    rol: user.rol,
+    employee_id: ''
   }
 
   showForm.value = true

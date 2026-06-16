@@ -806,6 +806,7 @@ const nuevoEmpleado = ref({
   salario: 0
 
 })
+
 const validarFormulario = () => {
 
   let valido = true

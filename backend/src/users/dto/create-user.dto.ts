@@ -4,9 +4,12 @@ import {
   MinLength,
   IsIn,
 } from 'class-validator';
-
+import {
+  IsOptional,
+  IsNumber
+} from 'class-validator';
 export class CreateUserDto {
-
+  
   @IsNotEmpty()
   @IsString()
   username!: string;
@@ -27,4 +30,7 @@ export class CreateUserDto {
     'EMPLEADO'
   ])
   rol!: string;
+  
+  @IsOptional()
+  employee_id!: number;
 }

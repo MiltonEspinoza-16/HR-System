@@ -11,6 +11,9 @@ export class User {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  
+  
+
   @Column({ unique: true })
   username!: string;
 
@@ -25,6 +28,11 @@ export class User {
     enum: ['ADMIN', 'RRHH', 'JEFE', 'EMPLEADO'],
   })
   rol!: string;
+  
+  @Column({
+  nullable: true
+  })
+  employee_id!: number;
 
   @Column({
     default: true,

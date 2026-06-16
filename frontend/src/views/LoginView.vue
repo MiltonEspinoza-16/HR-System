@@ -332,15 +332,32 @@ const handleLogin = async () => {
     }
   )
 
-  if (response.data.success) {
+  if (response.data.success) {    // para los logs de acceso 
 
-        authStore.setUser(
-        response.data.user
-        )
+  await axios.post(
+    'http://localhost:3000/access-logs',
+    {
+      usuario:
+        response.data.user.username,
 
-    router.push('/app/dashboard')
+      ip:
+        '127.0.0.1',
 
-  } else {
+      evento:
+        'INGRESO',
+
+      browser:
+        navigator.userAgent
+    }
+  )
+
+  authStore.setUser(
+    response.data.user
+  )
+
+  router.push('/app/dashboard')
+
+} else {
 
     loginError.value =
       response.data.message

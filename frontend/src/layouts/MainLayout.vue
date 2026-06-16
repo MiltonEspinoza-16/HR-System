@@ -109,15 +109,63 @@
 <script setup lang="ts">
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
+import axios from 'axios'   // axios solo funciona con fuciones async 
 
 const authStore = useAuthStore()
 const router = useRouter()
 
-const cerrarSesion = () => {
+const registrarLog = async () => {
 
+    await axios.post(
+    'http://localhost:3000/access-logs',
+    {
+      usuario:
+        authStore.user.username,
+
+      ip:
+        '127.0.0.1',
+
+      evento:
+        'SALIDA',
+
+      browser:
+        navigator.userAgent
+    }
+  )
   authStore.logout()
 
   router.push('/')
+
+}
+const cerrarSesion = async () => {
+   console.log(
+    'Registrando salida:',
+    authStore.user?.username
+  )
+  try {
+
+    await axios.post(
+      'http://localhost:3000/access-logs',
+      {
+        usuario: authStore.user?.username,
+        ip: 'localhost',
+        evento: 'SALIDA',
+        browser: navigator.userAgent
+      }
+    )
+
+  } catch (error) {
+
+    console.error(
+      'Error registrando salida',
+      error
+    )
+
+  }
+
+  authStore.logout()
+
+  router.push('/login')
 
 }
 </script>

@@ -15,11 +15,12 @@ export class AuthController {
     private readonly authService: AuthService,
   ) {}
 
-  @Post('login')
+@Post('login')
 login(
   @Body() loginDto: LoginDto,
 ) {
 
+  console.log('BODY RECIBIDO:')
   console.log(loginDto)
 
   return this.authService.login(
@@ -27,4 +28,5 @@ login(
     loginDto.password,
   );
 }
+
 }

@@ -32,11 +32,22 @@ export class Attendance {
   hora_entrada!: string
 
   @Column({
-    nullable: true
+  nullable: true
   })
   hora_salida!: string
+  
 
   @Column()
   estado!: string
+
+  @Column({
+  nullable: true
+  })
+  latitud!: string
+
+  @Column({
+    nullable: true
+  })
+  longitud!: string
 
 }

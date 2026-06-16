@@ -13,6 +13,8 @@ import { VacationsModule } from './vacations/vacations.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { AttendancesModule } from './attendances/attendances.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { AccessLogModule } from './access-log/access-log.module';
+
 
 
 @Module({
@@ -55,6 +57,10 @@ import { PermissionsModule } from './permissions/permissions.module';
     AttendancesModule,
 
     PermissionsModule,
+
+    AccessLogModule,
+
+   
     
 
   ],
