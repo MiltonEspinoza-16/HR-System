@@ -19,6 +19,9 @@ async function bootstrap() {
   credentials: true,
   });
 
+  console.log('DB_HOST:', process.env.DB_HOST);
+  console.log('DB_PORT:', process.env.DB_PORT);
+  console.log('DB_NAME:', process.env.DB_NAME);
   await app.listen(process.env.PORT ?? 3000);
 }
 
